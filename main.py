@@ -1,11 +1,5 @@
-'''
-reference:
-http://math.bu.edu/people/mg/ratings/rs/node5.html
-
-'''
-
- DEFAULT_RATING = 1000
- DEFAULT_MATCHES = 10
+DEFAULT_RATING = 1000
+DEFAULT_MATCHES = 10
 
 
 
@@ -16,6 +10,13 @@ class Player:
         self.Nf = Nf
         self.R0 = R0
         self.name = name
+
+    def __str__(self):
+	    return "Name: " + self.name +" "*(12-len(self.name)) + "Rating: " + self.R0 + "Matches: " + self.Nf
+
+    def We(self, player_name, player_database):
+        other = player_database.get_player(player_name)
+        return 1.0/(1.0+10**(-(self.rank - other.get_rank())/400.0))
 
     def get_rank(self):
         return self.R0
@@ -51,12 +52,9 @@ class Player:
             else:
                 print("error")
             E += We(self.R0, match[0], player_database)
-
         self.R0 += K*(S-E)
-
         def We(rank_0, player_name, player_database):
             return 1.0/(1.0+10**(-(rank_0 - player_database.get_player(player_name).get_rank())/400.0))
-
         def calc_K(K_full, Nf, matches):
             if K_full:
                 return 800.0/(Nf+matches)
@@ -72,17 +70,17 @@ class Player_Database:
     '''
     def __init__(self):
         self.data = {}
-
+'''
     def __init__(self, data):
         # process data
         pass
 
     def __init__(self, players):
         self.players = players
-
+'''
     def add_player(self, player_name, R0= DEFAULT_RATING, matches = DEFAULT_MATCHES):
-        player_info = [player_name, R0, matches]
-        self.data[player_name] = player_info
+        player = Player(player_name, matches, R0)
+        self.data[player_name] = player
 
     def delete_player(self, player_name):
         try:
@@ -99,20 +97,20 @@ class Player_Database:
             return self.data[player_name]
 
     def event_rank_adjust(self, match_list, K_full = True):
-
+'''
         def We(rank_0, player_name, player_database):
             return 1.0/(1.0+10**(-(rank_0 - player_database.get_player(player_name).get_rank())/400.0))
-
+'''
         def calc_K(K_full, Nf, matches):
             if K_full:
                 return 800.0/(Nf+matches)
             else:
                 return 400.0/(Nf+matches/2.0)
 
-        new_rankings = {}
+        ranking_adj = {}
 
         for player in self.data:
-            # assumes match_array == [player_name_1, player_name_2, ]
+            # assumes match_array == [player_name_1, player_name_2, winning_player_name]
             player_dict = {}
             relevant_matches = []
             for match in match_list[]:
@@ -123,9 +121,9 @@ class Player_Database:
             S = 0
             E = 0
             for match in relevant_matches:
-                if match[1] == self.name:
+                if match[1] == player.name:
                     match[1] == match[0]
-                    match[0] == self.name
+                    match[0] == player.name
                 if match[0] == match[2]:
                     S += 1
                 elif match[1] == match[2]:
@@ -134,12 +132,15 @@ class Player_Database:
                     S += .5
                 else:
                     print("error")
-                E += We(self.R0, match[0], player_database)
+                E += player.We(match[1],) ### --- FIX THIS
 
-            self.R0 += K*(S-E)
+			ranking_adj[player.name] = K*(S-E)
 
-
-
+		for player in self.data:
+			try:
+				player.R0 += ranking_adj[player.name]
+			except KeyError:
+				pass
 
 
 def main():
